@@ -1,0 +1,26 @@
+{
+  "name": "share-selection-example-site",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "npm run build:plugin && docusaurus start",
+    "build": "npm run build:plugin && docusaurus build",
+    "build:plugin": "npm run --prefix ../.. build",
+    "serve": "docusaurus serve",
+    "clear": "docusaurus clear"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.10.2",
+    "@docusaurus/preset-classic": "^3.10.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "overrides": {
+    "@docusaurus/bundler": {
+      "webpackbar": "^7.0.0"
+    }
+  },
+  "engines": {
+    "node": ">=20.0"
+  }
+}

@@ -1,0 +1,67 @@
+.share-selection {
+  --share-selection-background: #0b0b0c;
+  --share-selection-color: #fff;
+  --share-selection-hover: rgb(255 255 255 / 14%);
+  --share-selection-radius: 12px;
+
+  position: absolute;
+  z-index: calc(var(--ifm-z-index-fixed, 200) + 10);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--share-selection-radius);
+  background: var(--share-selection-background);
+  color: var(--share-selection-color);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  font-family: var(--ifm-font-family-base, system-ui, sans-serif);
+  font-size: 0.9rem;
+  line-height: 1;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.share-selection[hidden] {
+  display: none;
+}
+
+[data-theme='dark'] .share-selection {
+  --share-selection-background: #26272b;
+  outline: 1px solid rgb(255 255 255 / 12%);
+}
+
+.share-selection__button {
+  appearance: none;
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  border-radius: calc(var(--share-selection-radius) - 4px);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.share-selection__button:hover,
+.share-selection__button:focus-visible {
+  background: var(--share-selection-hover);
+  outline: none;
+}
+
+.share-selection__button:focus-visible {
+  box-shadow: 0 0 0 2px var(--ifm-color-primary, #2e8555);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .share-selection:not([hidden]) {
+    animation: share-selection-in 120ms ease-out;
+  }
+}
+
+@keyframes share-selection-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
