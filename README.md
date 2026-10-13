@@ -37,6 +37,10 @@ export default {
 
 That's it. The palette appears on docs pages, blog posts, and MDX pages.
 
+## Keyboard access
+
+Select a passage with Shift and the arrow keys using your browser's caret browsing mode. When the palette appears, press **Alt+Shift+S** (**Option+Shift+S** on macOS) to focus its first action. Use **Tab** to move between actions and **Enter** to activate one. **Escape** closes the palette and returns focus to the selected passage.
+
 ## Configure
 
 ```js
