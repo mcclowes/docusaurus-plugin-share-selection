@@ -182,13 +182,26 @@ The plugin serializes its options into a JSON `<script>` tag and registers a cli
 
 ## Development
 
+Use Node 24, matching the lint and package-export CI job. Install the example's dependencies before starting it:
+
 ```bash
-npm install
+npm ci
+npm --prefix examples/docusaurus-v3 ci
 npm test              # unit tests (Vitest)
 npm run build
 npm run example:start # example site in examples/docusaurus-v3
 npm run test:e2e      # Playwright, against the built example site
 ```
+
+Pass custom Docusaurus options after `--`:
+
+```bash
+npm run example:start -- --port 4317
+npm run example:build -- --out-dir "output with spaces"
+npm run example:serve -- --port 4317 --dir "output with spaces"
+```
+
+The helper regression tests run both npm layers in temporary fixtures and check exact arguments, including paths with spaces. They run with `npm test` and do not start the example site.
 
 ## License
 
