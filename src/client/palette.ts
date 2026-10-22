@@ -13,15 +13,21 @@ import {
 } from '../core/formats';
 import type { ClientConfig, ProviderOptions, ResolvedAction } from '../types';
 import { copyRich, copyText } from './clipboard';
+import {
+  captureSelectionBookmark,
+  restoreSelectionBookmark,
+  sameRange,
+  type SelectionBookmark,
+} from './selectionFocus';
 
 const GAP = 8;
 const SELECTION_SETTLE_MS = 150;
 const FEEDBACK_MS = 1200;
 /** Touch browsers can clear the selection when a palette button is tapped; ignore that briefly. */
 const TAP_GRACE_MS = 600;
+const FOCUS_SHORTCUT = 'Alt+Shift+S';
 
-interface Target {
-  range: Range;
+interface Target extends SelectionBookmark {
   root: Element;
 }
 
@@ -59,10 +65,13 @@ export function createPalette(config: ClientConfig): Palette {
   element.className = 'share-selection';
   element.setAttribute('role', 'toolbar');
   element.setAttribute('aria-label', 'Share selection');
+  element.setAttribute('aria-keyshortcuts', FOCUS_SHORTCUT);
+  element.title = `Focus sharing options (${FOCUS_SHORTCUT})`;
   element.hidden = true;
   document.body.append(element);
 
   let target: Target | null = null;
+  let dismissedRange: Range | null = null;
   let view: 'main' | 'ai' = 'main';
   let dragging = false;
   let tappedAt = 0;
@@ -195,13 +204,16 @@ export function createPalette(config: ClientConfig): Palette {
   }
 
   function hide() {
+    clearTimeout(settleTimer);
     clearTimeout(feedbackTimer);
     element.hidden = true;
     target = null;
+    dismissedRange = null;
     view = 'main';
   }
 
   function evaluate() {
+    if (!element.hidden && element.contains(document.activeElement)) return;
     if (Date.now() - tappedAt < TAP_GRACE_MS) return;
     const selection = window.getSelection();
     const root = eligibleRoot(selection, captureOptions);
@@ -210,11 +222,13 @@ export function createPalette(config: ClientConfig): Palette {
       return;
     }
     const range = selection.getRangeAt(0);
-    if (target && target.range.toString() === range.toString() && !element.hidden) {
+    if (dismissedRange && sameRange(dismissedRange, range)) return;
+    dismissedRange = null;
+    if (target && sameRange(target.range, range) && !element.hidden) {
       position();
       return;
     }
-    target = { range: range.cloneRange(), root };
+    target = { ...captureSelectionBookmark(selection, root), root };
     view = 'main';
     render();
   }
@@ -225,6 +239,7 @@ export function createPalette(config: ClientConfig): Palette {
       return;
     }
     dragging = true;
+    dismissedRange = null;
     if (target) hide();
   };
   const onPointerUp = () => {
@@ -237,7 +252,28 @@ export function createPalette(config: ClientConfig): Palette {
     if (!dragging) settleTimer = setTimeout(evaluate, SELECTION_SETTLE_MS);
   };
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'Escape' && !element.hidden) hide();
+    if (
+      !element.hidden &&
+      event.altKey &&
+      event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.isComposing &&
+      (event.key.toLowerCase() === 's' || event.code === 'KeyS')
+    ) {
+      event.preventDefault();
+      element.querySelector<HTMLButtonElement>('button')?.focus();
+    }
+    if (event.key === 'Escape' && !element.hidden) {
+      const saved = target;
+      const hadFocus = element.contains(document.activeElement);
+      hide();
+      dismissedRange = saved?.range.cloneRange() ?? null;
+      if (hadFocus && saved) {
+        event.preventDefault();
+        restoreSelectionBookmark(saved);
+      }
+    }
   };
   const onResize = () => {
     if (!element.hidden) position();
@@ -257,8 +293,7 @@ export function createPalette(config: ClientConfig): Palette {
     evaluate,
     hide,
     destroy() {
-      clearTimeout(settleTimer);
-      clearTimeout(feedbackTimer);
+      hide();
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('selectionchange', onSelectionChange);
